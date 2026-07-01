@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель адміністратора — Створення листівки</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+        }
+        h2 {
+            text-align: center;
+            color: #4a90e2;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: none;
+        }
+        button {
+            width: 100%;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Створення листівки 🎁</h2>
+    
+    <label for="receiverName">Для кого листівка (Ім'я):</label>
+    <input type="text" id="receiverName" placeholder="Введіть ім'я...">
+
+    <label for="cardText">Текст листівки (розділяйте сторінки символом | ):</label>
+    <textarea id="cardText" placeholder="Привіт! | Вітаю зі святом! | Бажаю щастя!"></textarea>
+
+    <button onclick="sendCardToServer()">Надіслати на сервер</button>
+</div>
+
+<script>
+    async function sendCardToServer() {
+        const name = document.getElementById('receiverName').value.trim();
+        const text = document.getElementById('cardText').value.trim();
+
+        if (!name || !text) {
+            alert('Будь ласка, заповніть усі поля!');
+            return;
+        }
+
+        const pagesArray = text.split('|').map(p => p.trim());
+
+        try {
+            const response = await fetch('/api/save-card', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ receiver: name, pages: pagesArray })
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Листівку успішно збережено на сервері!');
+            } else {
+                alert('Помилка: ' + data.message);
+            }
+        } catch (error) {
+            alert('Не вдалося з\'єднатися із сервером.');
+        }
+    }
+</script>
+
+</body>
+</html>
