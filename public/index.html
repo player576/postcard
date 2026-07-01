@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Твоя інтерактивна листівка</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        h1 { color: #ff6b81; margin-bottom: 20px; }
+        input[type="text"] {
+            width: 100%; padding: 12px; border: 2px solid #ffa7b6;
+            border-radius: 10px; font-size: 18px; margin-bottom: 15px;
+            box-sizing: border-box; text-align: center;
+        }
+        button {
+            background-color: #ff6b81; color: white; border: none;
+            padding: 12px 25px; font-size: 18px; border-radius: 10px;
+            cursor: pointer; font-weight: bold; width: 100%;
+        }
+        .content-area { display: none; }
+        .page-text {
+            font-size: 22px; line-height: 1.6; margin: 40px 0;
+            min-height: 120px; display: flex; align-items: center;
+            justify-content: center; color: #4a4a4a; font-style: italic;
+        }
+        .mobile-nav { display: none; justify-content: space-between; margin-top: 20px; }
+        .nav-btn { width: 48%; background-color: #4a90e2; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div id="loginBlock">
+        <h1>Вітання! ✨</h1>
+        <p>Введіть своє ім'я, щоб відкрити листівку:</p>
+        <input type="text" id="userName" placeholder="Ваше ім'я...">
+        <button onclick="loadCardFromServer()">Відкрити</button>
+    </div>
+
+    <div id="cardBlock" class="content-area">
+        <h1 id="greetingTitle">Для тебе ❤️</h1>
+        <div class="page-text" id="pageContent">Завантаження...</div>
+        
+        <div class="mobile-nav" id="mobileControls">
+            <button class="nav-btn" onclick="prevPage()">⬅️ Назад</button>
+            <button class="nav-btn" onclick="nextPage()">Далі ➡️</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let pages = [];
+    let currentPage = 0;
+
+    async function loadCardFromServer() {
+        const inputName = document.getElementById('userName').value.trim();
+
+        if (!inputName) {
+            alert('Будь ласка, введіть ім\'я!');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/get-card', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: inputName })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                pages = data.pages;
+                document.getElementById('loginBlock').style.display = 'none';
+                document.getElementById('cardBlock').style.display = 'block';
+                document.getElementById('greetingTitle').innerText = `Для тебе, ${inputName}! ✨`;
+                
+                showPage();
+                checkDevice();
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            alert('Помилка з\'єднання із сервером.');
+        }
+    }
+
+    function showPage() {
+        if (pages.length > 0) {
+            document.getElementById('pageContent').innerText = pages[currentPage];
+        }
+    }
+
+    function nextPage() {
+        if (currentPage < pages.length - 1) {
+            currentPage++;
+            showPage();
+        }
+    }
+
+    function prevPage() {
+        if (currentPage > 0) {
+            currentPage--;
+            showPage();
+        }
+    }
+
+    function checkDevice() {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            document.getElementById('mobileControls').style.display = 'flex';
+        }
+    }
+</script>
+
+</body>
+</html>
