@@ -42,7 +42,7 @@ app.post('/api/save-card', async (req, res) => {
       'INSERT INTO postcards (receiver, code, pages) VALUES ($1, $2, $3)',
       [receiver.trim(), code.trim(), pages]
     );
-    res.json({ success: true });
+    res.json({ success: true }); // <--- ОБЯЗАТЕЛЬНО должен возвращаться JSON
   } catch (err) {
     console.error(err);
     res.json({ success: false, message: 'Помилка бази даних при збереженні.' });
