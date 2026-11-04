@@ -110,39 +110,43 @@
 
     window.onload = generateCode;
 
-    async function sendCardToServer() {
-        const name = document.getElementById('receiverName').value.trim();
-        const code = document.getElementById('cardCode').value.trim();
-        const text = document.getElementById('cardText').value.trim();
+async function sendCardToServer() {
+    const name = document.getElementById('receiverName').value.trim();
+    const code = document.getElementById('cardCode').value.trim();
+    const text = document.getElementById('cardText').value.trim();
 
-        if (!name || !code || !text) {
-            alert('Будь ласка, заповніть усі поля!');
-            return;
-        }
-
-        const pagesArray = text.split('|').map(p => p.trim());
-
-        try {
-            const response = await fetch('/api/save-card', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ receiver: name, code: code, pages: pagesArray })
-            });
-            const data = await response.json();
-            
-            if (data.success) {
-                alert(`Листівку успішно збережено! 🥳\nПередайте отримувачу:\nІм'я: ${name}\nКод: ${code}`);
-                // Опціонально: згенерувати новий код для наступної листівки
-                generateCode();
-                document.getElementById('receiverName').value = '';
-                document.getElementById('cardText').value = '';
-            } else {
-                alert('Помилка: ' + data.message);
-            }
-        } catch (error) {
-            alert('Не вдалося з\'єднатися із сервером.');
-        }
+    if (!name || !code || !text) {
+        alert('Будь ласка, заповніть усі поля!');
+        return;
     }
+
+    const pagesArray = text.split('|').map(p => p.trim());
+    const button = event.target;
+    button.disabled = true; // Блокируем кнопку
+
+    try {
+        const response = await fetch('/api/save-card', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ receiver: name, code: code, pages: pagesArray })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(`Листівку успішно збережено! 🥳\nПередайте отримувачу:\nІм'я: ${name}\nКод: ${code}`);
+            generateCode();
+            document.getElementById('receiverName').value = '';
+            document.getElementById('cardText').value = '';
+        } else {
+            alert('Помилка: ' + data.message);
+        }
+    } catch (error) {
+        alert('Не вдалося з\'єднатися із сервером.');
+    } finally {
+        button.disabled = false; // Разблокируем кнопку обратно
+    }
+}
+
 </script>
 
 </body>
