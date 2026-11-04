@@ -46,6 +46,15 @@
             height: 100px;
             resize: none;
         }
+        .code-box {
+            display: flex;
+            gap: 10px;
+        }
+        .code-box input {
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
         button {
             width: 100%;
             background-color: #4a90e2;
@@ -61,6 +70,15 @@
         button:hover {
             background-color: #357abd;
         }
+        .secondary-btn {
+            background-color: #6c757d;
+            width: auto;
+            margin-top: 0;
+            padding: 10px 15px;
+        }
+        .secondary-btn:hover {
+            background-color: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -71,6 +89,12 @@
     <label for="receiverName">Для кого листівка (Ім'я):</label>
     <input type="text" id="receiverName" placeholder="Введіть ім'я...">
 
+    <label for="cardCode">Секретний 4-значний код:</label>
+    <div class="code-box">
+        <input type="text" id="cardCode" maxlength="4" readonly>
+        <button type="button" class="secondary-btn" onclick="generateCode()">Згенерувати новий</button>
+    </div>
+
     <label for="cardText">Текст листівки (розділяйте сторінки символом | ):</label>
     <textarea id="cardText" placeholder="Привіт! | Вітаю зі святом! | Бажаю щастя!"></textarea>
 
@@ -78,11 +102,20 @@
 </div>
 
 <script>
+    // Генерація випадкового 4-значного коду при завантаженні сторінки
+    function generateCode() {
+        const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
+        document.getElementById('cardCode').value = randomCode;
+    }
+
+    window.onload = generateCode;
+
     async function sendCardToServer() {
         const name = document.getElementById('receiverName').value.trim();
+        const code = document.getElementById('cardCode').value.trim();
         const text = document.getElementById('cardText').value.trim();
 
-        if (!name || !text) {
+        if (!name || !code || !text) {
             alert('Будь ласка, заповніть усі поля!');
             return;
         }
@@ -93,12 +126,16 @@
             const response = await fetch('/api/save-card', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ receiver: name, pages: pagesArray })
+                body: JSON.stringify({ receiver: name, code: code, pages: pagesArray })
             });
             const data = await response.json();
             
             if (data.success) {
-                alert('Листівку успішно збережено на сервері!');
+                alert(`Листівку успішно збережено! 🥳\nПередайте отримувачу:\nІм'я: ${name}\nКод: ${code}`);
+                // Опціонально: згенерувати новий код для наступної листівки
+                generateCode();
+                document.getElementById('receiverName').value = '';
+                document.getElementById('cardText').value = '';
             } else {
                 alert('Помилка: ' + data.message);
             }
