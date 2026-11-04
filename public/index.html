@@ -3,68 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Твоя інтерактивна листівка</title>
+    <title>Вітальна листівка</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
-            margin: 0;
-            padding: 20px;
+            background: linear-gradient(135deg, #a8edd9 0%, #fed6e3 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            box-sizing: border-box;
+            margin: 0;
+            padding: 20px;
         }
-        .card {
-            background: white;
+        .card-box {
+            background: #ffffff;
             padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 500px;
             width: 100%;
-            max-width: 450px;
             text-align: center;
-            box-sizing: border-box;
         }
-        h1 { color: #ff6b81; margin-bottom: 20px; }
-        input[type="text"] {
-            width: 100%; padding: 12px; border: 2px solid #ffa7b6;
-            border-radius: 10px; font-size: 18px; margin-bottom: 15px;
-            box-sizing: border-box; text-align: center;
+        h1 { color: #333; margin-bottom: 20px; }
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
         }
+        input:focus { border-color: #4CAF50; }
         button {
-            background-color: #ff6b81; color: white; border: none;
-            padding: 12px 25px; font-size: 18px; border-radius: 10px;
-            cursor: pointer; font-weight: bold; width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
         }
-        .content-area { display: none; }
+        button:hover { background-color: #45a049; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        
+        .postcard-view {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            background: #fff8e7;
+            border: 2px dashed #ffa726;
+            border-radius: 12px;
+            min-height: 150px;
+            position: relative;
+        }
         .page-text {
-            font-size: 22px; line-height: 1.6; margin: 40px 0;
-            min-height: 120px; display: flex; align-items: center;
-            justify-content: center; color: #4a4a4a; font-style: italic;
+            font-size: 20px;
+            color: #444;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
         }
-        .mobile-nav { display: none; justify-content: space-between; margin-top: 20px; }
-        .nav-btn { width: 48%; background-color: #4a90e2; }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+        .indicator { font-weight: bold; color: #666; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div id="loginBlock">
-        <h1>Вітання! ✨</h1>
-        <p>Введіть своє ім'я та 4-значний код:</p>
-        <input type="text" id="userName" placeholder="Ваше ім'я...">
-        <input type="text" id="cardCode" placeholder="Код (напр. 1234)" maxlength="4">
-        <button onclick="loadCardFromServer()">Відкрити</button>
+<div class="card-box">
+    <h1>Отримати листівку 🎁</h1>
+    
+    <div id="loginForm">
+        <input type="text" id="userName" placeholder="Введіть ваше ім'я">
+        <input type="text" id="userCode" placeholder="Секретний 4-значний код" maxlength="4">
+        <br>
+        <button onclick="getCard()">Відкрити листівку</button>
     </div>
 
-    <div id="cardBlock" class="content-area">
-        <h1 id="greetingTitle">Для тебе ❤️</h1>
-        <div class="page-text" id="pageContent">Завантаження...</div>
+    <div id="postcardArea" class="postcard-view">
+        <div id="pageText" class="page-text"></div>
         
-        <div class="mobile-nav" id="mobileControls">
-            <button class="nav-btn" onclick="prevPage()">⬅️ Назад</button>
-            <button class="nav-btn" onclick="nextPage()">Далі ➡️</button>
+        <div id="navControls" class="controls" style="display: none;">
+            <button id="prevBtn" onclick="prevPage()">⬅️ Назад</button>
+            <span id="pageIndicator" class="indicator">1 / 1</span>
+            <button id="nextBtn" onclick="nextPage()">Вперед ➡️</button>
         </div>
     </div>
 </div>
@@ -73,12 +102,12 @@
     let pages = [];
     let currentPage = 0;
 
-    async function loadCardFromServer() {
-        const inputName = document.getElementById('userName').value.trim();
-        const inputCode = document.getElementById('cardCode').value.trim();
+    async function getCard() {
+        const name = document.getElementById('userName').value.trim();
+        const code = document.getElementById('userCode').value.trim();
 
-        if (!inputName || !inputCode) {
-            alert('Будь ласка, заповніть ім\'я та код!');
+        if (!name || !code) {
+            alert("Будь ласка, введіть ім'я та код!");
             return;
         }
 
@@ -86,50 +115,50 @@
             const response = await fetch('/api/get-card', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: inputName, code: inputCode })
+                body: JSON.stringify({ name, code })
             });
+
             const data = await response.json();
 
             if (data.success) {
                 pages = data.pages;
-                document.getElementById('loginBlock').style.display = 'none';
-                document.getElementById('cardBlock').style.display = 'block';
-                document.getElementById('greetingTitle').innerText = `Для тебе, ${inputName}! ✨`;
-                
-                showPage();
-                checkDevice();
+                currentPage = 0;
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('postcardArea').style.display = 'block';
+                renderPage();
             } else {
                 alert(data.message);
             }
-        } catch (error) {
-            alert('Помилка з\'єднання із сервером.');
+        } catch (err) {
+            alert("Помилка підключення до сервера!");
         }
     }
 
-    function showPage() {
-        if (pages.length > 0) {
-            document.getElementById('pageContent').innerText = pages[currentPage];
+    function renderPage() {
+        document.getElementById('pageText').innerText = pages[currentPage];
+        document.getElementById('pageIndicator').innerText = `${currentPage + 1} з ${pages.length}`;
+
+        const navControls = document.getElementById('navControls');
+        if (pages.length > 1) {
+            navControls.style.display = 'flex';
+            document.getElementById('prevBtn').disabled = (currentPage === 0);
+            document.getElementById('nextBtn').disabled = (currentPage === pages.length - 1);
+        } else {
+            navControls.style.display = 'none';
         }
     }
 
     function nextPage() {
         if (currentPage < pages.length - 1) {
             currentPage++;
-            showPage();
+            renderPage();
         }
     }
 
     function prevPage() {
         if (currentPage > 0) {
             currentPage--;
-            showPage();
-        }
-    }
-
-    function checkDevice() {
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (isMobile) {
-            document.getElementById('mobileControls').style.display = 'flex';
+            renderPage();
         }
     }
 </script>
