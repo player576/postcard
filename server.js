@@ -15,19 +15,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Інициалізація таблиці листівок із колонкою для коду
+// Автоматична ініціалізація таблиці листівок
 async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS postcards (
-      id SERIAL PRIMARY KEY,
-      receiver TEXT NOT NULL,
-      code VARCHAR(4) NOT NULL,
-      pages TEXT[] NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS postcards (
+        id SERIAL PRIMARY KEY,
+        receiver TEXT NOT NULL,
+        code VARCHAR(4) NOT NULL,
+        pages TEXT[] NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("Таблиця postcards успішно перевірена / створена.");
+  } catch (err) {
+    console.error("Помилка створення таблиці:", err);
+  }
 }
-initDB().catch(console.error);
+initDB();
 
 // API: Зберегти листівку (з адмінки)
 app.post('/api/save-card', async (req, res) => {
@@ -42,11 +47,10 @@ app.post('/api/save-card', async (req, res) => {
       'INSERT INTO postcards (receiver, code, pages) VALUES ($1, $2, $3)',
       [receiver.trim(), code.trim(), pages]
     );
-    // ВОТ ЭТА СТРОКА ОБЯЗАТЕЛЬНА:
     return res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    return res.json({ success: false, message: 'Помилка бази даних при збереженні.' });
+    console.error("ПОМИЛКА БАЗИ ДАНИХ:", err);
+    return res.json({ success: false, message: 'Помилка БД: ' + err.message });
   }
 });
 
@@ -65,16 +69,16 @@ app.post('/api/get-card', async (req, res) => {
     );
 
     if (result.rows.length > 0) {
-      res.json({ success: true, pages: result.rows[0].pages });
+      return res.json({ success: true, pages: result.rows[0].pages });
     } else {
-      res.json({ success: false, message: 'Листівку не знайдено або введено невірний код!' });
+      return res.json({ success: false, message: 'Листівку не знайдено або введено невірний код!' });
     }
   } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: 'Помилка сервера при пошуку листівки.' });
+    console.error("ПОМИЛКА ПОШУКУ:", err);
+    return res.json({ success: false, message: 'Помилка сервера: ' + err.message });
   }
 });
 
 app.listen(port, () => {
-  console.log(`Сервер запущен на порту ${port}`);
+  console.log(`Сервер запущено на порту ${port}`);
 });
